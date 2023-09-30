@@ -4,15 +4,7 @@ import {
   computerVision,
   isConfigured as ComputerVisionIsConfigured,
 } from '../../computerVision';
-import styled from 'styled-components';
-import { text } from '@cloudinary/url-gen/qualifiers/source';
-
-const Loader = styled.div`
-  width: 100px;
-  height: ${(props) => props.precent}%;
-  border: 1px solid;
-  border-radius: 50%;
-`;
+import { DataToSaveSection } from './Add.styled';
 
 const Add = () => {
   const [invoice, setInvoice] = useState('');
@@ -20,9 +12,14 @@ const Add = () => {
   const [processing, setProcessing] = useState(false);
   const [uploadedImage, setUpladedImage] = useState(null);
   const [generatedUrl, setGeneratedUrl] = useState('');
-  const [dataToSave, setDataToSave] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [percentCompleted, setPercentCompleted] = useState(0);
+  const [dataToSave, setDataToSave] = useState({
+    invoice_number: '',
+    invoice_date: '',
+    price: '',
+    product: '',
+    mileage: '',
+  });
+  const [analized, setAnalized] = useState(false);
 
   const onFileUrlEntered = (e) => {
     // hold UI
@@ -36,40 +33,19 @@ const Add = () => {
     });
   };
 
-  const buttonHandler = (e) => {
-    const valueName = e.target.name.split(' ')[0];
-    setDataToSave({
-      ...dataToSave,
-      [valueName]: e.target.name,
-    });
-  };
-
   const DisplayResults = () => {
     return (
-      <div>
-        <h2>Computer Vision Analysis</h2>
-        <div>
-          <img
-            src={analysis.URL}
-            height="200"
-            border="1"
-            alt={
-              analysis.description &&
-              analysis.description.captions &&
-              analysis.description.captions[0].text
-                ? analysis.description.captions[0].text
-                : "can't find caption"
-            }
-          />
-        </div>
-        {analysis.text.readResults[0].lines.map((text, index) => {
+      <>
+        {analysis?.text?.readResults[0].lines.map((text, index) => {
           return (
-            <button onClick={buttonHandler} name={text.text} key={index}>
-              {text.text}
-            </button>
+            <>
+              <option key={index} value={text?.text}>
+                {text?.text}
+              </option>
+            </>
           );
         })}
-      </div>
+      </>
     );
   };
 
@@ -78,12 +54,13 @@ const Add = () => {
       <div>
         {!processing && (
           <div>
-            <button onClick={onFileUrlEntered}>Analizuj zdjęcie</button>
+            {generatedUrl !== "" && (
+              <button onClick={onFileUrlEntered}>Analizuj zdjęcie</button>
+            )}
           </div>
         )}
         {processing && <div>Processing</div>}
-        <hr />
-        {analysis && DisplayResults()}
+        {analysis && DisplayResults() && setAnalized(true)}
       </div>
     );
   };
@@ -96,7 +73,7 @@ const Add = () => {
     const formData = new FormData();
     formData.append('file', uploadedImage);
     formData.append('upload_preset', 'xitk1bu2');
-    setLoading(true);
+
     await axios
       .post(`${process.env.REACT_APP_CLOUDINARY_BASE_URL}/upload`, formData, {
         options: {
@@ -104,20 +81,12 @@ const Add = () => {
             'Content-Type': 'multipart/form-data',
           },
         },
-        onUploadProgress: (ProgressEvent) => {
-          const percentCompleted = Math.round(
-            (ProgressEvent.loaded * 100) / ProgressEvent.total
-          );
-          setPercentCompleted(percentCompleted);
-          setLoading(false);
-        },
       })
       .then((res) => {
         setGeneratedUrl(res.data.url);
       })
       .catch((err) => {
         console.log(err);
-        setLoading(false);
       });
   };
 
@@ -128,51 +97,109 @@ const Add = () => {
     }
   };
 
-  const sendDataHandler = async (data) => {
+  const sendDataHandler = async () => {
     try {
       const res = await axios.post('http://localhost:3002/api/invoice/add', {
         params: {
-          dataToSave
-        }
-      })
+          dataToSave,
+        },
+      });
       console.log(res.data);
-    } catch(error) {
-      console.log(error)
+    } catch (error) {
+      console.log(error);
     }
-  }
-
-  // wyświetl tylko dane:
-  // numer faktury,
-  // data wystawienia,
-  // miejsce wystawienia,
-  // data sprzedaży,
-  // nr rejestracyjny,
-  // dodaj pole do wpisania aktualnych kilometrów
+  };
 
   return (
     <>
       <input type="file" accept="image/*" onChange={imageUpload} />
       <button onClick={postImage}>zatwierdź zdjęcie</button>
-      {/* <Loader precent={percentCompleted} >{percentCompleted}</Loader> */}
       <div>
-        Dane do zapisania:
-        {dataToSave &&
-          Object.keys(dataToSave).map((item, index) => {
-            return (
-              <>
-                <div key={index}>{dataToSave[item]}</div>
-              </>
-            );
-          })}
-          <input type="number" name="carMileage" placeholder='aktualny przebieg' onChange={(e) => {
-            setDataToSave({
-              ...dataToSave,
-              [e.target.name]: e.target.value,
-            });
-          }} />
-          <button onClick={() => sendDataHandler(dataToSave)} >zapisz</button>
+        {analized && (
+          <DataToSaveSection>
+            <h5>Dane do zapisania:</h5>
+            <span>
+              <p>numer faktury: </p>
+              <select
+                onChange={(e) =>
+                  setDataToSave({
+                    ...dataToSave,
+                    invoice_number: e.target.value,
+                  })
+                }
+              >
+                {DisplayResults()}
+              </select>
+            </span>
+            <span>
+              <p>data wystawienia faktury: </p>
+              <select
+                onChange={(e) =>
+                  setDataToSave({ ...dataToSave, invoice_date: e.target.value })
+                }
+              >
+                {DisplayResults()}
+              </select>
+            </span>
+            <span>
+              <p>kwota faktury: </p>
+              <select
+                onChange={(e) =>
+                  setDataToSave({ ...dataToSave, price: e.target.value })
+                }
+              >
+                {DisplayResults()}
+              </select>
+            </span>
+            <span>
+              <p>produkt: </p>
+              <select
+                onChange={(e) =>
+                  setDataToSave({ ...dataToSave, product: e.target.value })
+                }
+              >
+                {DisplayResults()}
+              </select>
+            </span>
+            <span>
+              <input
+                type="number"
+                name="carMileage"
+                placeholder="aktualny przebieg"
+                onChange={(e) => {
+                  setDataToSave({
+                    ...dataToSave,
+                    mileage: e.target.value,
+                  });
+                }}
+              />
+            </span>
+            <button onClick={sendDataHandler} >Zatwierdź</button>
+          </DataToSaveSection>
+        )}
       </div>
-      <div>{Render()}</div>
+      {!analized && (
+        <div>{Render()}</div>
+      )}
+      {analized && (
+        <>
+        <div>
+          <h1>Computer Vision Analysis</h1>
+          <img
+            src={analysis.URL}
+            height="400"
+            border="1"
+            alt={
+              analysis.description &&
+              analysis.description.captions &&
+              analysis.description.captions[0].text
+                ? analysis.description.captions[0].text
+                : "can't find caption"
+            }
+          />
+          </div>
+        </>
+      )}
     </>
   );
 };
