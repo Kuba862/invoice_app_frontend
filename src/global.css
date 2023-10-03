@@ -1,0 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Kaisei+Decol:wght@400;700&family=Montserrat:wght@400;700&family=Offside&family=Roboto:wght@400;700&family=Young+Serif&display=swap');
+
+@font-face {
+    font-family: 'Young Serif', serif;
+    src: url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Kaisei+Decol:wght@400;700&family=Montserrat:wght@400;700&family=Offside&family=Roboto:wght@400;700&family=Young+Serif&display=swap');
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}

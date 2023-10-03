@@ -5,6 +5,7 @@ import {
   isConfigured as ComputerVisionIsConfigured,
 } from '../../computerVision';
 import { DataToSaveSection } from './Add.styled';
+import { SavedSuccess } from '../SavedStatuses';
 
 const Add = () => {
   const [invoice, setInvoice] = useState('');
@@ -17,9 +18,18 @@ const Add = () => {
     invoice_date: '',
     price: '',
     product: '',
+    image: '',
     mileage: '',
   });
   const [analized, setAnalized] = useState(false);
+  const [uploaded, setUploaded] = useState(null);
+
+  useEffect(() => {
+    setDataToSave({
+      ...dataToSave,
+      image: generatedUrl
+    })
+  }, [generatedUrl])
 
   const onFileUrlEntered = (e) => {
     // hold UI
@@ -98,15 +108,22 @@ const Add = () => {
   };
 
   const sendDataHandler = async () => {
+    const { invoice_number, invoice_date, price, product, mileage, image } = dataToSave;
     try {
       const res = await axios.post('http://localhost:3002/api/invoice/add', {
         params: {
-          dataToSave,
+          invoice_number,
+          invoice_date,
+          price,
+          product,
+          image,
+          mileage
         },
       });
-      console.log(res.data);
+      setUploaded(true);
+      setDataToSave({});
     } catch (error) {
-      console.log(error);
+      setUploaded(false);
     }
   };
 
@@ -200,6 +217,9 @@ const Add = () => {
           </div>
         </>
       )}
+      {/* {uploaded !== null && (
+        <SavedSuccess success={uploaded ? true : false} />
+      )} */}
     </>
   );
 };
